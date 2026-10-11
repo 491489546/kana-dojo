@@ -352,5 +352,11 @@
   "termB": "bike (bicycle)",
   "explanation": "In Japanese バイク usually means motorcycle, not bicycle.",
   "example": "週末にバイクでツーリングに行った。"
+},
+{
+  "termA": "シール (shiiru)",
+  "termB": "seal (animal)",
+  "explanation": "シール usually means sticker/label. (Set 5)",
+  "example": "ノートにシールを貼った。"
 }
 ]
