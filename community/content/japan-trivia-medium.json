@@ -251,5 +251,44 @@
       "Kyushu"
     ],
     "correctIndex": 3
+  },
+  {
+  "question": "What is the Japanese word for \"thank you\"? (Community variation 11)",
+  "difficulty": "medium",
+  "answers": [
+    "Sumimasen",
+    "Arigatou",
+    "Ohayou",
+    "Sayonara"
+  ],
+  "correctIndex": 1
+  },
+  {
+  "question": "What is the traditional Japanese tea ceremony called? (Community variation 19)",
+  "difficulty": "medium",
+  "answers": [
+    "Sado",
+    "Judo",
+    "Kendo",
+    "Shodo"
+  ],
+  "correctIndex": 0
+  },
+  {
+  "question": "What is the name of Japan’s national public broadcaster? (Community variation 54)",
+  "difficulty": "medium",
+  "answers": [
+    "NHK",
+    "NHK World Japan",
+    "Asahi",
+    "Fuji TV"
+  ],
+  "correctIndex": 0
+},
+  {
+    "question": "Which Japanese city is famous for the Gion Matsuri festival?",
+    "difficulty": "medium",
+    "answers": ["Kyoto", "Nagoya", "Hiroshima", "Sendai"],
+    "correctIndex": 0
   }
 ]
