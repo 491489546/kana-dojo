@@ -284,7 +284,7 @@
     "Fuji TV"
   ],
   "correctIndex": 0
-},
+  },
   {
     "question": "Which Japanese city is famous for the Gion Matsuri festival?",
     "difficulty": "medium",
@@ -292,13 +292,13 @@
     "correctIndex": 0
   },
   {
-  "question": "Which Japanese island is known for its active volcano Mount Aso? (Community variation 55)",
+  "question": "What is the traditional Japanese tea ceremony called? (Community variation 19)",
   "difficulty": "medium",
   "answers": [
-    "Kyushu",
-    "Honshu",
-    "Shikoku",
-    "Hokkaido"
+    "Sado",
+    "Judo",
+    "Kendo",
+    "Shodo"
   ],
   "correctIndex": 0
 }
