@@ -628,8 +628,8 @@
   "correctIndex": 0
 },
   {
-  "question": "Which city is known for its snow festival and ice sculptures?",
-  "answers": ["Sapporo", "Aomori", "Toyama", "Nagano"],
-  "correctIndex": 0
-},
+      "question": "Which city is known for its snow festival and ice sculptures?",
+      "answers": ["Sapporo", "Aomori", "Toyama", "Nagano"],
+      "correctIndex": 0
+    }
 ]
