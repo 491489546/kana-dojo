@@ -26,20 +26,35 @@ describe('community issue scheduler', () => {
   });
 
   it('uses the source-controlled mode switch', () => {
-    expect(isRandomSchedulerEnabled()).toBe(false);
+    expect(isRandomSchedulerEnabled()).toBe(true);
   });
 
   it('uses inclusive integer bounds and validates configuration', () => {
-    vi.stubEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN', '20');
+    vi.stubEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN', '30');
     vi.stubEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX', '65');
     const config = getSchedulerConfig();
 
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    expect(pickRandomInterval(config)).toBe(20);
-    vi.spyOn(Math, 'random').mockReturnValue(0.999999);
+    const randomValues = vi.spyOn(crypto, 'getRandomValues');
+    randomValues.mockImplementationOnce((array) => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    expect(pickRandomInterval(config)).toBe(30);
+    randomValues.mockImplementationOnce((array) => {
+      (array as Uint32Array)[0] = 35;
+      return array;
+    });
+    expect(pickRandomInterval(config)).toBe(65);
+    randomValues.mockImplementationOnce((array) => {
+      (array as Uint32Array)[0] = 0xffff_ffff;
+      return array;
+    }).mockImplementationOnce((array) => {
+      (array as Uint32Array)[0] = 35;
+      return array;
+    });
     expect(pickRandomInterval(config)).toBe(65);
 
-    vi.stubEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX', '19');
+    vi.stubEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX', '29');
     expect(() => getSchedulerConfig()).toThrow('1 <= min <= max');
   });
 

@@ -8,14 +8,13 @@ This guide describes how cron-job.org triggers
 
 `COMMUNITY_ISSUE_RANDOM_SCHEDULER_ENABLED` in
 [`scheduler.ts`](../../app/api/trigger-community-issue/scheduler.ts) is the
-source-controlled boolean switch. It defaults to `false`, preserving the
-existing deterministic behavior: every cron-job.org request dispatches the
-workflow, with no random-scheduler state or callback required. Set it to `true`
-and redeploy to enable random mode; set it back to `false` and redeploy to
-restore deterministic mode.
+source-controlled boolean switch. It is currently `true`, enabling random
+mode. Set it to `false` and redeploy to restore deterministic behavior: every
+cron-job.org request dispatches the workflow, with no random-scheduler state or
+callback required. Changing this constant requires a redeployment.
 
-In random mode, cron-job.org polls the endpoint at a fixed cadence (recommended:
-every 5 minutes). The endpoint atomically claims a due run in Upstash Redis and
+In random mode, cron-job.org polls the endpoint at a fixed cadence of exactly
+every 5 minutes (`*/5 * * * *`). The endpoint atomically claims a due run in Upstash Redis and
 dispatches at most one workflow for that due time. After a created issue, the
 workflow reports completion and the next delay is a uniformly selected whole
 number of minutes, inclusive of the configured minimum and maximum. Polling
@@ -34,7 +33,7 @@ Set these Vercel Production environment variables (and redeploy):
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN` | `20` | Inclusive minimum after a created issue. |
+| `COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN` | `30` | Inclusive minimum after a created issue. |
 | `COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX` | `65` | Inclusive maximum after a created issue. |
 | `COMMUNITY_ISSUE_NO_ITEM_RETRY_MINUTES` | `10` | Retry delay when no eligible issue can be created. |
 | `UPSTASH_REDIS_REST_URL` | — | Existing Upstash Redis REST URL. Required in random mode. |
@@ -65,8 +64,8 @@ Configure a `POST` request to
 - Body: `{}`
 
 Keep the existing deterministic interval when the feature flag is off. When
-random mode is enabled, change cron-job.org to poll every 5 minutes. Polling
-more frequently reduces timing jitter but is not necessary for correctness.
+random mode is enabled, configure cron-job.org to poll **every 5 minutes**
+(`*/5 * * * *`); do not leave the current 57-minute schedule in place.
 The endpoint returns `dispatched: false` when a random-mode poll is early or
 another request already holds the due-run claim.
 

@@ -4,9 +4,9 @@ const NEXT_RUN_KEY = 'community-issue:scheduler:next-run-at';
 const CLAIM_KEY = 'community-issue:scheduler:claim';
 const CLAIM_TTL_SECONDS = 15 * 60;
 
-// Flip to true to use randomized intervals instead of dispatching on every
-// cron-job.org request. Changing this constant requires a redeployment.
-export const COMMUNITY_ISSUE_RANDOM_SCHEDULER_ENABLED = false;
+// Set to false to restore dispatch-on-every-request behavior. Changing this
+// constant requires a redeployment.
+export const COMMUNITY_ISSUE_RANDOM_SCHEDULER_ENABLED = true;
 
 export interface SchedulerConfig {
   minIntervalMinutes: number;
@@ -85,7 +85,7 @@ export function isRandomSchedulerEnabled(): boolean {
 
 export function getSchedulerConfig(): SchedulerConfig {
   const config = {
-    minIntervalMinutes: readIntEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN', 20),
+    minIntervalMinutes: readIntEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN', 30),
     maxIntervalMinutes: readIntEnv('COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX', 65),
     noIssueRetryMinutes: readIntEnv('COMMUNITY_ISSUE_NO_ITEM_RETRY_MINUTES', 10),
   };
@@ -101,9 +101,21 @@ export function getSchedulerConfig(): SchedulerConfig {
 }
 
 export function pickRandomInterval(config: SchedulerConfig): number {
-  return config.minIntervalMinutes + Math.floor(
-    Math.random() * (config.maxIntervalMinutes - config.minIntervalMinutes + 1),
-  );
+  const intervalCount = config.maxIntervalMinutes - config.minIntervalMinutes + 1;
+  const uint32Range = 0x1_0000_0000;
+  if (intervalCount > uint32Range) {
+    throw new Error('Random scheduler interval range must not exceed 2^32 values.');
+  }
+
+  // Rejection sampling avoids modulo bias, giving each whole-minute interval
+  // the same probability when backed by the platform CSPRNG.
+  const acceptedLimit = Math.floor(uint32Range / intervalCount) * intervalCount;
+  const sample = new Uint32Array(1);
+  do {
+    crypto.getRandomValues(sample);
+  } while (sample[0] >= acceptedLimit);
+
+  return config.minIntervalMinutes + (sample[0] % intervalCount);
 }
 
 export async function claimIfDue(runId: string): Promise<SchedulerClaim | null> {
