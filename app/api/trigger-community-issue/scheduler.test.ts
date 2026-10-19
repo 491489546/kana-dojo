@@ -1,11 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockHasRedisConfig = vi.fn(() => true);
-const mockRedisPipeline = vi.fn();
+const mockRpc = vi.fn();
+const mockCreateClient = vi.fn();
 
-vi.mock('@/shared/infra/server/redis', () => ({
-  hasRedisConfig: () => mockHasRedisConfig(),
-  redisPipeline: (...args: unknown[]) => mockRedisPipeline(...args),
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: (...args: unknown[]) => mockCreateClient(...args),
 }));
 
 import {
@@ -21,8 +20,14 @@ describe('community issue scheduler', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
-    mockHasRedisConfig.mockReturnValue(true);
-    mockRedisPipeline.mockReset();
+    mockRpc.mockReset();
+    mockCreateClient.mockReset().mockReturnValue({ rpc: mockRpc });
+  });
+
+  beforeEach(() => {
+    vi.stubEnv('SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
+    mockCreateClient.mockReturnValue({ rpc: mockRpc });
   });
 
   it('uses the source-controlled mode switch', () => {
@@ -59,27 +64,33 @@ describe('community issue scheduler', () => {
   });
 
   it('claims only a due run', async () => {
-    mockRedisPipeline.mockResolvedValueOnce([{ result: ['claimed_by_us', String(Date.now())] }]);
+    mockRpc.mockResolvedValueOnce({
+      data: [{ claim_status: 'claimed_by_us', due_at: new Date().toISOString() }],
+      error: null,
+    });
     const claim = await claimIfDue('run-1');
     expect(claim?.runId).toBe('run-1');
 
-    mockRedisPipeline.mockResolvedValueOnce([{ result: ['not_due', String(Date.now() + 60_000)] }]);
+    mockRpc.mockResolvedValueOnce({
+      data: [{ claim_status: 'not_due', due_at: new Date(Date.now() + 60_000).toISOString() }],
+      error: null,
+    });
     expect(await claimIfDue('run-2')).toBeNull();
   });
 
-  it('does not claim when Redis is unavailable', async () => {
-    mockHasRedisConfig.mockReturnValue(false);
-    await expect(claimIfDue('run-1')).rejects.toThrow('Upstash Redis is not configured');
+  it('does not claim when Supabase is unavailable', async () => {
+    vi.stubEnv('SUPABASE_URL', '');
+    await expect(claimIfDue('run-1')).rejects.toThrow('Supabase scheduler configuration is missing');
   });
 
   it('completes only the matching run and releases claims after dispatch errors', async () => {
-    mockRedisPipeline.mockResolvedValueOnce([{ result: 'completed' }]);
+    mockRpc.mockResolvedValueOnce({ data: true, error: null });
     await expect(completeSchedulerRun('run-1', 'created', getSchedulerConfig())).resolves.toBe(true);
 
-    mockRedisPipeline.mockResolvedValueOnce([{ result: 'stale' }]);
+    mockRpc.mockResolvedValueOnce({ data: false, error: null });
     await expect(completeSchedulerRun('run-1', 'failed', getSchedulerConfig())).resolves.toBe(false);
 
-    mockRedisPipeline.mockResolvedValueOnce([{ result: 1 }]);
+    mockRpc.mockResolvedValueOnce({ data: true, error: null });
     await expect(releaseSchedulerClaim('run-1')).resolves.toBeUndefined();
   });
 });

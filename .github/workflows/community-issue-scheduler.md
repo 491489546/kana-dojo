@@ -14,7 +14,8 @@ cron-job.org request dispatches the workflow, with no random-scheduler state or
 callback required. Changing this constant requires a redeployment.
 
 In random mode, cron-job.org polls the endpoint at a fixed cadence of exactly
-every 5 minutes (`*/5 * * * *`). The endpoint atomically claims a due run in Upstash Redis and
+every 5 minutes (`*/5 * * * *`). The endpoint atomically claims a due run in
+the existing Supabase Postgres database and
 dispatches at most one workflow for that due time. After a created issue, the
 workflow reports completion and the next delay is a uniformly selected whole
 number of minutes, inclusive of the configured minimum and maximum. Polling
@@ -36,8 +37,8 @@ Set these Vercel Production environment variables (and redeploy):
 | `COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MIN` | `30` | Inclusive minimum after a created issue. |
 | `COMMUNITY_ISSUE_RANDOM_INTERVAL_MINUTES_MAX` | `65` | Inclusive maximum after a created issue. |
 | `COMMUNITY_ISSUE_NO_ITEM_RETRY_MINUTES` | `10` | Retry delay when no eligible issue can be created. |
-| `UPSTASH_REDIS_REST_URL` | — | Existing Upstash Redis REST URL. Required in random mode. |
-| `UPSTASH_REDIS_REST_TOKEN` | — | Existing Upstash Redis REST token. Required in random mode. |
+| `SUPABASE_URL` | Existing project setting | Existing Supabase project URL. Required in random mode. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Existing project setting | Existing service-role key. Required in random mode. |
 | `CRON_SECRET` | — | Shared bearer token for cron-job.org requests. |
 | `GITHUB_PAT` | — | Token authorized to dispatch the workflow. |
 | `COMMUNITY_ISSUE_SCHEDULER_CALLBACK_SECRET` | — | Shared callback bearer token; configure the same value in Vercel and GitHub Actions secrets. |
@@ -50,9 +51,13 @@ Also configure these GitHub repository settings:
   `https://kanadojo.com/api/trigger-community-issue/complete`.
 
 Use whole-number bounds satisfying `1 <= min <= max`; retry must be at least
-one minute. Random mode fails closed with a service error if Redis, the callback
+one minute. Random mode fails closed with a service error if Supabase, the callback
 secret, or valid interval configuration is missing. Create a strong random
 callback secret and do not commit it.
+
+Scheduler state and the atomic claim/complete/release procedures are created by
+`supabase/migrations/20261019183000_community_issue_scheduler.sql`. Apply the
+migration to the linked production Supabase project before enabling random mode.
 
 ## cron-job.org setup
 
@@ -71,7 +76,7 @@ another request already holds the due-run claim.
 
 ## Safety and operations
 
-- Redis Lua scripts atomically check due time and claim/release the run to
+- Postgres functions atomically check due time and claim/release the run to
   protect against overlapping or retried cron requests.
 - Callback requests require the shared bearer secret and the active run ID;
   stale or duplicate callbacks cannot advance scheduler state.
