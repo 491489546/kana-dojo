@@ -328,4 +328,12 @@
   "region": "Kansai",
   "note": "Very common in Osaka/Kyoto speech. (Set 3)"
   }
+,
+  {
+    "dialect": "あかん",
+    "standardJapanese": "だめ",
+    "english": "no good",
+    "region": "Kansai",
+    "note": "Used for prohibition/failure. (Set 6)"
+  }
 ]
