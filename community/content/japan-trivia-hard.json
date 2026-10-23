@@ -740,5 +740,27 @@
     "Hokkaido"
   ],
   "correctIndex": 0
-}
+},
+  {
+  "question": "What is the name of the traditional Japanese theater featuring puppets? (Community variation 30)",
+  "difficulty": "hard",
+  "answers": [
+    "Bunraku",
+    "Noh",
+    "Kabuki",
+    "Kyogen"
+  ],
+  "correctIndex": 0
+},
+  {
+    "question": "Which Japanese city hosted the 1998 Winter Olympics?",
+    "difficulty": "hard",
+    "answers": [
+      "Nagano",
+      "Kobe",
+      "Hiroshima",
+      "Naha"
+    ],
+    "correctIndex": 0
+  }
 ]
